@@ -1,0 +1,11 @@
+node_modules/
+allure-results/
+allure-report/
+allure-history/
+gh-pages/
+videos/
+*.log
+
+# El APK pesa 192 MB: NO se commitea. Se sube como asset de un GitHub Release
+# y el workflow lo descarga. Ver README.
+*.apk

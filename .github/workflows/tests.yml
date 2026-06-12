@@ -1,0 +1,164 @@
+name: Pruebas móviles (Appium)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: # permite correrlo manualmente desde la pestaña Actions
+  schedule:
+    - cron: '0 6 * * *' # corrida diaria automática a las 06:00 UTC (opcional)
+
+# Necesario para que el workflow pueda publicar el reporte en la rama gh-pages
+permissions:
+  contents: write
+
+# Evita que dos corridas publiquen el reporte al mismo tiempo
+concurrency:
+  group: appium-tests
+  cancel-in-progress: false
+
+env:
+  # Tag del GitHub Release que contiene el APK. Se puede sobreescribir creando
+  # una "Repository variable" llamada APK_RELEASE_TAG en Settings > Variables.
+  APK_RELEASE_TAG: ${{ vars.APK_RELEASE_TAG || 'apk-latest' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Configurar Java (requerido por el SDK de Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Descargar el APK desde el Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p apk
+          gh release download "$APK_RELEASE_TAG" --pattern '*.apk' --dir apk
+          mv apk/*.apk app.apk
+          ls -lh app.apk
+
+      - name: Habilitar aceleración por hardware (KVM)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Recuperar historial de reportes anteriores
+        if: always()
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Correr pruebas en el emulador
+        id: tests
+        continue-on-error: true # no cortamos aquí: queremos reportar y avisar a Slack aunque fallen
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          APP_PATH: ${{ github.workspace }}/app.apk
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
+          script: |
+            # Instala el driver de Android y arranca el servidor Appium en segundo plano
+            npx appium driver install uiautomator2 || true
+            npx appium > appium.log 2>&1 &
+            # Espera a que Appium esté listo (máx ~60s)
+            for i in $(seq 1 30); do
+              curl -sf http://127.0.0.1:4723/status && break
+              echo "Esperando a Appium... intento $i"; sleep 2
+            done
+            # Corre la suite de pruebas
+            npm test
+
+      - name: Generar reporte Allure con historial
+        if: always()
+        uses: simple-elf/allure-report-action@v1.9
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          allure_history: allure-history
+          keep_reports: 30 # conserva las últimas 30 corridas
+
+      - name: Publicar reporte en GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
+
+      - name: Subir videos como artifact descargable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: videos-corrida-${{ github.run_number }}
+          path: videos/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Notificar resultado a Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ "$TEST_OUTCOME" = "success" ]; then
+            STATUS_EMOJI="✅"; STATUS_TEXT="PASARON"; COLOR="#36a64f"
+          else
+            STATUS_EMOJI="❌"; STATUS_TEXT="FALLARON"; COLOR="#d00000"
+          fi
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          NAME="${GITHUB_REPOSITORY##*/}"
+          PAGES_URL="https://${OWNER}.github.io/${NAME}/"
+          PAYLOAD=$(cat <<EOF
+          {
+            "attachments": [{
+              "color": "$COLOR",
+              "blocks": [
+                { "type": "section", "text": { "type": "mrkdwn", "text": "$STATUS_EMOJI *Pruebas móviles $STATUS_TEXT* — \`$GITHUB_REPOSITORY\` (corrida #$RUN_NUMBER)" } },
+                { "type": "actions", "elements": [
+                  { "type": "button", "text": { "type": "plain_text", "text": "📊 Ver reporte" }, "url": "$PAGES_URL" },
+                  { "type": "button", "text": { "type": "plain_text", "text": "⚙️ Ver corrida en Actions" }, "url": "$RUN_URL" }
+                ]}
+              ]
+            }]
+          }
+          EOF
+          )
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sf -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+          else
+            echo "⚠️ Secret SLACK_WEBHOOK_URL no configurado; se omite el aviso a Slack."
+          fi
+
+      - name: Reflejar el estado real de las pruebas
+        if: always()
+        run: |
+          if [ "${{ steps.tests.outcome }}" != "success" ]; then
+            echo "::error::Hubo pruebas que fallaron"
+            exit 1
+          fi
+          echo "Todas las pruebas pasaron"
