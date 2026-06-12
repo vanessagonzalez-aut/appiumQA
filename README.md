@@ -87,4 +87,84 @@ describe('Login', () => {
 
 Se incluye automáticamente en la próxima corrida. Puedes borrar
 `app.demo-fallo.spec.js` (es solo una demostración de cómo se ve un fallo).
+
+---
+
+# Correr en GitHub Actions (CI)
+
+El workflow [.github/workflows/tests.yml](.github/workflows/tests.yml) corre las
+pruebas en la nube cada vez que haces push, en pull requests, todos los días
+(06:00 UTC) y manualmente. Al terminar:
+
+- 📊 Publica el **reporte Allure con historial de tendencias** en GitHub Pages.
+- 💬 Envía el resultado (pasaron/fallaron + enlaces) a un **canal de Slack**.
+- 🎬 Sube los **videos** de cada prueba como artifact descargable.
+
+## Puesta en marcha (una sola vez)
+
+### 1. Subir el código a un repositorio público de GitHub
+
+El commit inicial ya está hecho. Crea el repo y haz push:
+
+```powershell
+# Opción A: con GitHub CLI (gh) instalado
+gh repo create pruebas-appium --public --source . --remote origin --push
+
+# Opción B: manual — crea el repo vacío en github.com y luego:
+git remote add origin https://github.com/TU_USUARIO/pruebas-appium.git
+git push -u origin main
 ```
+
+> ⚠️ El APK **no** se sube al repo (está en `.gitignore` por su tamaño de 192 MB).
+
+### 2. Subir el APK como GitHub Release
+
+El workflow descarga el APK desde un Release con el tag `apk-latest`:
+
+```powershell
+# Con gh (recomendado):
+gh release create apk-latest "app-staging-release - 6.1.0 (1536).apk" `
+  --title "APK de pruebas" --notes "APK usado por las pruebas automatizadas"
+
+# Para actualizar el APK más adelante:
+gh release upload apk-latest "ruta\al\nuevo.apk" --clobber
+```
+
+O hazlo desde la web: **Releases → Draft a new release → tag `apk-latest`**, y
+arrastra el `.apk` como asset.
+
+> Si prefieres otro tag, crea una *Repository variable* `APK_RELEASE_TAG` en
+> **Settings → Secrets and variables → Actions → Variables**.
+
+### 3. Configurar el webhook de Slack
+
+1. Ve a <https://api.slack.com/apps> → **Create New App** → *From scratch*.
+2. Activa **Incoming Webhooks** → *Add New Webhook to Workspace* → elige el canal.
+3. Copia la URL (`https://hooks.slack.com/services/...`).
+4. En tu repo: **Settings → Secrets and variables → Actions → New repository secret**
+   - Nombre: `SLACK_WEBHOOK_URL`
+   - Valor: la URL del webhook.
+
+### 4. Habilitar GitHub Pages (tras la primera corrida)
+
+La primera corrida crea la rama `gh-pages`. Luego:
+
+- **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**.
+
+El reporte quedará en `https://TU_USUARIO.github.io/pruebas-appium/` (el mismo
+enlace que llega a Slack), con gráficas de tendencia de las últimas 30 corridas.
+
+## Disparar una corrida
+
+- Automático: con cada `git push` a `main` o en cada Pull Request.
+- Manual: pestaña **Actions → Pruebas móviles (Appium) → Run workflow**.
+
+## Notas
+
+- El emulador corre en runners Ubuntu con KVM (API 33, x86_64). Puedes cambiar
+  `api-level` en el workflow.
+- La prueba `app.demo-fallo.spec.js` **falla a propósito**, así que la primera
+  corrida saldrá en rojo y Slack dirá "FALLARON". Bórrala cuando metas tus
+  pruebas reales.
+- El paralelismo en CI se logra con una *matrix* (un emulador por job). Si lo
+  necesitas, te lo puedo configurar; hoy corre en un emulador por simplicidad.

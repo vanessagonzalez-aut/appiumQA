@@ -1,0 +1,8 @@
+# Fuerza saltos de línea LF en el repo para que los scripts bash del workflow
+# corran bien en los runners Linux de GitHub Actions (evita errores de \r).
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.apk binary
