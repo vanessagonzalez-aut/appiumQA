@@ -47,6 +47,39 @@ npm run report
 Genera y abre el reporte HTML de Allure, con el estado de cada prueba,
 el video adjunto y, en los fallos, una captura de pantalla.
 
+## Enviar resultados a Slack (también en local)
+
+Al terminar una corrida local, se envía un resumen (pasaron/fallaron) al canal
+de Slack, igual que en CI. Solo necesitas configurar el webhook de una de estas
+dos formas:
+
+**Opción A — variable de entorno (por sesión de terminal):**
+
+```powershell
+$env:SLACK_WEBHOOK_URL="https://hooks.slack.com/services/XXX/YYY/ZZZ"
+npm test
+```
+
+**Opción B — archivo `.slack-webhook`** (cómodo, no hay que escribirlo cada vez;
+está en `.gitignore`, no se sube al repo):
+
+1. Crea un archivo llamado `.slack-webhook` en la raíz del proyecto.
+2. Pega dentro solo la URL del webhook.
+3. Corre `npm test` normalmente.
+
+### Probar el webhook sin correr toda la suite
+
+Para verificar rápido que Slack está bien configurado (sin esperar al emulador):
+
+```powershell
+npm run slack:test
+```
+
+Envía un mensaje de prueba al canal. Si lo ves en Slack, está todo listo.
+
+> ℹ️ En CI el aviso lo manda el workflow (con enlaces al reporte y a la corrida);
+> el aviso local se omite automáticamente ahí para no duplicar mensajes.
+
 ## Paralelismo real
 
 El paralelismo depende del **número de dispositivos conectados**:

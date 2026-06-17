@@ -134,4 +134,19 @@ exports.config = {
       }
     }
   },
+
+  // --- Aviso a Slack al terminar toda la suite -------------------------------
+  onComplete: async function (exitCode, config, capabilities, results) {
+    // En CI el aviso lo envía el workflow (con enlaces al reporte y a la corrida),
+    // así que aquí solo notificamos en corridas LOCALES para no duplicar mensajes.
+    if (process.env.GITHUB_ACTIONS) {
+      return;
+    }
+    const {sendSlackMessage} = require('./helpers/slack');
+    await sendSlackMessage({
+      passed: (results && results.passed) || 0,
+      failed: (results && results.failed) || 0,
+      source: 'local',
+    });
+  },
 };

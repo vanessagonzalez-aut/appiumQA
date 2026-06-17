@@ -9,3 +9,6 @@ videos/
 # El APK pesa 192 MB: NO se commitea. Se sube como asset de un GitHub Release
 # y el workflow lo descarga. Ver README.
 *.apk
+
+# URL del webhook de Slack para corridas locales (secreto, no se commitea)
+.slack-webhook
