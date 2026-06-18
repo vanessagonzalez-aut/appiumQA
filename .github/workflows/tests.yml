@@ -8,9 +8,11 @@ on:
   schedule:
     - cron: '0 6 * * *' # corrida diaria automática a las 06:00 UTC (opcional)
 
-# Necesario para que el workflow pueda publicar el reporte en la rama gh-pages
+# contents: write -> publicar en la rama gh-pages; pages: read -> consultar el
+# estado del despliegue de GitHub Pages antes de avisar a Slack.
 permissions:
   contents: write
+  pages: read
 
 # Evita que dos corridas publiquen el reporte al mismo tiempo
 concurrency:
@@ -96,13 +98,48 @@ jobs:
         if: always()
         run: npx allure generate allure-results --clean -o allure-report
 
-      - name: Publicar reporte en GitHub Pages
+      # Guarda una copia PERMANENTE de esta corrida en /<numero-de-corrida>/
+      - name: Publicar reporte de esta corrida (subcarpeta por número)
         if: always()
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: allure-report
+          destination_dir: ${{ github.run_number }}
+          keep_files: true # conserva las corridas anteriores
+
+      # Actualiza la raíz / con el último reporte (sin borrar las subcarpetas)
+      - name: Publicar último reporte en la raíz
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-report
+          keep_files: true
+
+      - name: Esperar a que GitHub Pages despliegue el reporte
+        if: always()
+        continue-on-error: true # nunca rompe el job; en el peor caso solo no espera
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # SHA al que quedó la rama gh-pages tras publicar
+          TARGET=$(gh api "repos/${GITHUB_REPOSITORY}/branches/gh-pages" --jq '.commit.sha' 2>/dev/null || echo "")
+          echo "Commit objetivo de gh-pages: ${TARGET:-desconocido}"
+          # Damos un momento a que GitHub encole el despliegue
+          sleep 15
+          for i in $(seq 1 24); do
+            BUILD=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" --jq '.status + "|" + (.commit // "")' 2>/dev/null || echo "error|")
+            STATUS="${BUILD%%|*}"; COMMIT="${BUILD##*|}"
+            echo "Intento $i -> estado=$STATUS commit=${COMMIT:0:8}"
+            if [ "$STATUS" = "built" ] && { [ -z "$TARGET" ] || [ "$COMMIT" = "$TARGET" ]; }; then
+              echo "✅ GitHub Pages desplegó el reporte nuevo"; exit 0
+            fi
+            sleep 10
+          done
+          echo "⚠️ Se agotó la espera del despliegue de Pages; aviso a Slack de todos modos."
 
       - name: Subir videos como artifact descargable
         if: always()
@@ -128,7 +165,8 @@ jobs:
           fi
           OWNER="${GITHUB_REPOSITORY%%/*}"
           NAME="${GITHUB_REPOSITORY##*/}"
-          PAGES_URL="https://${OWNER}.github.io/${NAME}/"
+          # Enlace permanente al reporte de ESTA corrida (la raíz / siempre tiene el último)
+          PAGES_URL="https://${OWNER}.github.io/${NAME}/${RUN_NUMBER}/"
           PAYLOAD=$(cat <<EOF
           {
             "attachments": [{
@@ -136,7 +174,7 @@ jobs:
               "blocks": [
                 { "type": "section", "text": { "type": "mrkdwn", "text": "$STATUS_EMOJI *Pruebas móviles $STATUS_TEXT* — \`$GITHUB_REPOSITORY\` (corrida #$RUN_NUMBER)" } },
                 { "type": "actions", "elements": [
-                  { "type": "button", "text": { "type": "plain_text", "text": "📊 Ver reporte" }, "url": "$PAGES_URL" },
+                  { "type": "button", "text": { "type": "plain_text", "text": "📊 Ver reporte de esta corrida" }, "url": "$PAGES_URL" },
                   { "type": "button", "text": { "type": "plain_text", "text": "⚙️ Ver corrida en Actions" }, "url": "$RUN_URL" }
                 ]}
               ]
