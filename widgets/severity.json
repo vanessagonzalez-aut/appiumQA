@@ -1,1 +1,1 @@
-[]
+[{"uid":"b7fef11d01193408","name":"debería renderizar contenido en pantalla","time":{"start":1781790686743,"stop":1781790692424,"duration":5681},"status":"passed","severity":"normal"},{"uid":"b608ea1258053bff","name":"debería encontrar un elemento que NO existe (falla a propósito)","time":{"start":1781790662701,"stop":1781790678964,"duration":16263},"status":"broken","severity":"normal"},{"uid":"a76ad653a3a34f7f","name":"debería abrir la aplicación correctamente","time":{"start":1781790639832,"stop":1781790654564,"duration":14732},"status":"passed","severity":"normal"}]
