@@ -79,17 +79,9 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
-          script: |
-            # Instala el driver de Android y arranca el servidor Appium en segundo plano
-            npx appium driver install uiautomator2 || true
-            npx appium > appium.log 2>&1 &
-            # Espera a que Appium esté listo (máx ~60s)
-            for i in $(seq 1 30); do
-              curl -sf http://127.0.0.1:4723/status && break
-              echo "Esperando a Appium... intento $i"; sleep 2
-            done
-            # Corre la suite de pruebas
-            npm test
+          # Todo en una sola línea: la action ejecuta el script por líneas, así que
+          # un bucle multilínea se rompe y el Appium en segundo plano no sobrevive.
+          script: npx appium driver install uiautomator2 || true; (npx appium >appium.log 2>&1 &); for i in $(seq 1 30); do curl -sf http://127.0.0.1:4723/status >/dev/null && break; echo "Esperando a Appium ($i)"; sleep 2; done; npm test
 
       - name: Sembrar historial de corridas anteriores
         if: always()
