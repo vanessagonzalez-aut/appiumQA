@@ -1,0 +1,4 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","9636","debería encontrar un elemento que NO existe (falla a propósito)","App - Demo de fallo","2026-06-20","broken","2026-06-20","","","",""
+"","15552","debería abrir la aplicación correctamente","App - Arranque","2026-06-20","passed","2026-06-20","","","",""
+"","5979","debería renderizar contenido en pantalla","App - Pantalla inicial","2026-06-20","passed","2026-06-20","","","",""
