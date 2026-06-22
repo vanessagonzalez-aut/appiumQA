@@ -1,4 +1,4 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","17184","debería encontrar un elemento que NO existe (falla a propósito)","App - Demo de fallo","2026-06-21","broken","2026-06-21","","","",""
-"","5586","debería renderizar contenido en pantalla","App - Pantalla inicial","2026-06-21","passed","2026-06-21","","","",""
-"","14633","debería abrir la aplicación correctamente","App - Arranque","2026-06-21","passed","2026-06-21","","","",""
+"","17285","debería encontrar un elemento que NO existe (falla a propósito)","App - Demo de fallo","2026-06-22","broken","2026-06-22","","","",""
+"","9311","debería renderizar contenido en pantalla","App - Pantalla inicial","2026-06-22","passed","2026-06-22","","","",""
+"","16073","debería abrir la aplicación correctamente","App - Arranque","2026-06-22","passed","2026-06-22","","","",""
