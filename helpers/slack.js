@@ -19,12 +19,11 @@ function getWebhookUrl() {
   return '';
 }
 
-// URL del reporte publicado en GitHub Pages. Se puede sobreescribir con la
-// variable de entorno PAGES_URL; si no, usa la del repo por defecto.
-const DEFAULT_PAGES_URL = 'https://vanessagonzalez-aut.github.io/appiumQA/';
-
+// URL del reporte en GitHub Pages SOLO si se define explícitamente (variable
+// PAGES_URL). En local NO apuntamos al reporte de CI/producción porque no
+// corresponde a la corrida local.
 function getPagesUrl() {
-  return (process.env.PAGES_URL || DEFAULT_PAGES_URL).trim();
+  return (process.env.PAGES_URL || '').trim();
 }
 
 /**
@@ -55,8 +54,8 @@ async function sendSlackMessage({passed = 0, failed = 0, source = 'local', pages
     },
   ];
 
-  // Botón con el enlace al reporte publicado en GitHub Pages
   if (pagesUrl) {
+    // Solo en contextos donde el reporte SÍ está publicado (p.ej. CI con PAGES_URL)
     blocks.push({
       type: 'actions',
       elements: [
@@ -64,6 +63,17 @@ async function sendSlackMessage({passed = 0, failed = 0, source = 'local', pages
           type: 'button',
           text: {type: 'plain_text', text: '📊 Ver reporte (GitHub Pages)'},
           url: pagesUrl,
+        },
+      ],
+    });
+  } else {
+    // Corrida local: el reporte no está publicado en la web, se genera localmente
+    blocks.push({
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: '💻 Corrida local — ejecuta `npm run report` para ver el reporte detallado con video.',
         },
       ],
     });
