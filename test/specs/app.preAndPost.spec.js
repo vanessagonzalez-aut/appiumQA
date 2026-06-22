@@ -1,13 +1,10 @@
 const {expect, driver} = require('@wdio/globals');
 const path = require('node:path');
 const fs = require('node:fs');
+const {execSync} = require('node:child_process');
 
 describe('Travel doc pre and post payment are working correctly', () => {
   const APP_ID = 'com.ivisa.services.stg';
-
-  // Arranque limpio: antes de cada prueba, si la app está abierta la cerramos
-  // y la volvemos a abrir desde cero, para que las validaciones siempre empiecen
-  // en la pantalla inicial.
   beforeEach(async () => {
     const state = await driver.queryAppState(APP_ID);
     // estados: 0=no instalada, 1=no corriendo, 2=segundo plano, 3=suspendida, 4=primer plano
@@ -29,8 +26,32 @@ describe('Travel doc pre and post payment are working correctly', () => {
     }
     if (!imageAlreadyOnDevice) {
       await driver.pushFile(remoteImage, fs.readFileSync(localImage).toString('base64'));
+      // Forzar el escaneo de medios para que el selector de archivos VEA la imagen.
+      // Sin esto, en un emulador limpio (CI) el archivo existe pero no está indexado
+      // en MediaStore y no aparece en el selector. Best-effort: si falla, seguimos.
+      try {
+        const caps = await driver.capabilities;
+        const udid = caps['appium:udid'] || caps.udid || caps.deviceUDID;
+        const target = udid ? `-s ${udid}` : '';
+        execSync(
+          `adb ${target} shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://${remoteImage}`,
+          {stdio: 'ignore'}
+        );
+      } catch {
+        // En local la imagen suele ya estar indexada; ignoramos el fallo del escaneo
+      }
     }
-    await driver.pause(5000);
+    // Espera a que la app TERMINE de cargar: aparece la pantalla inicial
+    await driver.waitUntil(
+      async () =>
+        (await driver.$('~Unlock the World').isExisting()) ||
+        (await driver.$('~Choose your language').isExisting()),
+      {
+        timeout: 60000,
+        interval: 1000,
+        timeoutMsg: 'La app no cargó la pantalla inicial en 60s',
+      }
+    );
     const checkHomepage = await driver.$('~Unlock the World').isExisting()
     if(!checkHomepage){
       await driver.$('~Choose your language').waitForDisplayed()
@@ -40,10 +61,12 @@ describe('Travel doc pre and post payment are working correctly', () => {
     }else{
       await driver.$('~Start a New Application').click()
     }
-    await driver.pause(3000);
-    const checkNotifications = await driver.$('~Skip').isExisting()
-    if(checkNotifications){
-      await driver.$('~Skip').click()
+    const notifSkip = await driver.$('~Skip');
+    try {
+      await notifSkip.waitForExist({ timeout: 10000 });
+      await notifSkip.click();
+    } catch {
+      // No apareció la pantalla de notificaciones; seguimos
     }
     await driver.$('~My passport is from\nUnited States\nsolidPassport, tap for more information on the below field').click()
     const countryInput = 'new UiSelector().className("android.widget.EditText").instance(1)'
@@ -57,7 +80,9 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Confirm').click()
     await driver.$('~Upload file').click()
     await driver.$('~Browse Files').click()
-    await driver.$('id=com.google.android.documentsui:id/icon_thumb').click()
+    const fileThumb = await driver.$('id=com.google.android.documentsui:id/icon_thumb')
+    await fileThumb.waitForExist({ timeout: 20000 })
+    await fileThumb.click()
     await driver.$('~Checking Image Quality ...').waitForDisplayed()
     await driver.$('~Personal details').waitForDisplayed({ timeout: 30000})
   });
