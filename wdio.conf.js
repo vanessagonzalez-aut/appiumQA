@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {getConnectedDevices} = require('./helpers/devices');
+const {getApkInfo, isAppInstalled} = require('./helpers/app');
 
 // Ruta absoluta al APK que se va a probar.
 // En CI se descarga el APK y se pasa su ruta por la variable de entorno APP_PATH.
@@ -28,26 +29,44 @@ const allSpecs = fs
   .filter((f) => f.endsWith('.js'))
   .map((f) => path.join(specsDir, f));
 
+// Datos del APK (package + activity) para poder lanzarlo sin reinstalar
+const apkInfo = getApkInfo(APP_PATH);
+// Permite forzar la (re)instalación aunque ya esté instalado: APP_FORCE_INSTALL=1
+const forceInstall = process.env.APP_FORCE_INSTALL === '1';
+
 // Una capability por dispositivo, cada una con su porción de pruebas y puertos únicos
-const capabilities = devices.map((udid, i) => ({
-  // Cada dispositivo corre sus specs de uno en uno (una sesión por dispositivo)
-  maxInstances: 1,
-  platformName: 'Android',
-  'appium:automationName': 'UiAutomator2',
-  'appium:udid': udid,
-  'appium:app': APP_PATH,
-  // No reinstalar el APK en cada sesión: instala una vez y reutiliza (mucho más rápido)
-  'appium:noReset': true,
-  'appium:fullReset': false,
-  // Puertos únicos para que las sesiones en paralelo no choquen entre sí
-  'appium:systemPort': 8200 + i,
-  'appium:mjpegServerPort': 7810 + i,
-  // La instalación del APK puede ser lenta (sobre todo desde OneDrive)
-  'appium:androidInstallTimeout': 300000,
-  'appium:newCommandTimeout': 300000,
-  // Reparto round-robin: el dispositivo i corre los specs i, i+N, i+2N...
-  specs: allSpecs.filter((_, idx) => idx % devices.length === i),
-}));
+const capabilities = devices.map((udid, i) => {
+  const cap = {
+    // Cada dispositivo corre sus specs de uno en uno (una sesión por dispositivo)
+    maxInstances: 1,
+    platformName: 'Android',
+    'appium:automationName': 'UiAutomator2',
+    'appium:udid': udid,
+    // No reinstalar el APK en cada sesión: instala una vez y reutiliza (mucho más rápido)
+    'appium:noReset': true,
+    'appium:fullReset': false,
+    // Puertos únicos para que las sesiones en paralelo no choquen entre sí
+    'appium:systemPort': 8200 + i,
+    'appium:mjpegServerPort': 7810 + i,
+    // La instalación del APK puede ser lenta (sobre todo desde OneDrive)
+    'appium:androidInstallTimeout': 300000,
+    'appium:newCommandTimeout': 300000,
+    // Reparto round-robin: el dispositivo i corre los specs i, i+N, i+2N...
+    specs: allSpecs.filter((_, idx) => idx % devices.length === i),
+  };
+
+  // Si la app YA está instalada en este dispositivo, la lanzamos directamente
+  // (appPackage/appActivity, sin instalar nada). Si no, instalamos el APK.
+  if (!forceInstall && apkInfo && apkInfo.appPackage && isAppInstalled(udid, apkInfo.appPackage)) {
+    cap['appium:appPackage'] = apkInfo.appPackage;
+    if (apkInfo.appActivity) cap['appium:appActivity'] = apkInfo.appActivity;
+    console.log(`⏩ ${udid}: app ya instalada (${apkInfo.appPackage}); se omite la instalación`);
+  } else {
+    cap['appium:app'] = APP_PATH;
+    console.log(`⬇️  ${udid}: se instalará el APK`);
+  }
+  return cap;
+});
 
 console.log(
   `\n📱 ${devices.length} dispositivo(s) detectado(s): ${devices.join(', ')}` +
