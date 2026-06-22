@@ -80,10 +80,24 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Confirm').click()
     await driver.$('~Upload file').click()
     await driver.$('~Browse Files').click()
-    const fileThumb = await driver.$('id=com.google.android.documentsui:id/icon_thumb')
-    await fileThumb.waitForExist({ timeout: 20000 })
-    await fileThumb.click()
+    // El selector del sistema abre en "Recientes", que está vacío para archivos
+    // subidos por adb. Lo llevamos a Downloads y elegimos el archivo por su nombre.
+    await driver.$('~Show roots').click()
+    await driver.$('~Downloads').click()
+    const file = await driver.$('~passport.jpeg')
+    await file.waitForExist({ timeout: 20000 })
+    await file.click()
     await driver.$('~Checking Image Quality ...').waitForDisplayed()
     await driver.$('~Personal details').waitForDisplayed({ timeout: 30000})
+    await driver.$('~Save and Continue').click()
+    await driver.$('~Passport details').waitForDisplayed()
+    await driver.$('~Save and Continue').click()
+    await driver.$('~Travelers').waitForDisplayed()
+    await driver.$('~Save and Continue').click()
+    await driver.$('~Choose your processing time').waitForDisplayed()
+    await driver.$('~Save and Continue').click()
+    await driver.$('~Order Review').waitForDisplayed()
+    await driver.$('~Continue to payment').click()
+
   });
 });
