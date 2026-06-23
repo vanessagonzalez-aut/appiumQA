@@ -88,7 +88,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     // El selector del sistema abre en "Recientes", que está vacío para archivos
     // subidos por adb. Lo llevamos a Downloads y elegimos el archivo por su nombre.
     await driver.$('~Show roots').click()
-    await driver.$('~Downloads').click()
+    await driver.$('android=new UiSelector().resourceId("android:id/title").text("Downloads")').click()
     const file = await driver.$('~passport.jpeg')
     await file.waitForExist({ timeout: 20000 })
     await file.click()
