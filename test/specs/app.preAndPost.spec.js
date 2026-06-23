@@ -76,7 +76,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$(`android=${countryInput}`).addValue('india')
     await driver.$('~India').click()
     await driver.$('~Get Started!').click()
-    const notifSkip = await driver.$('~Skip');
     try {
       await driver.$('~Apply now').waitForExist({ timeout: 5000 });
       await driver.$('~Apply now').click();
