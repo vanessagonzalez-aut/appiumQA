@@ -1,2 +1,2 @@
 "DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
-"","90191","Navigate through an india application without errors","Travel doc pre and post payment are working correctly","2026-06-23","passed","2026-06-23","","","",""
+"","54534","Navigate through an india application without errors","Travel doc pre and post payment are working correctly","2026-06-24","broken","2026-06-24","","","",""
