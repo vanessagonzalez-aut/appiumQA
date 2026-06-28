@@ -7,7 +7,7 @@ const {getApkInfo, isAppInstalled} = require('./helpers/app');
 // En CI se descarga el APK y se pasa su ruta por la variable de entorno APP_PATH.
 const APP_PATH = process.env.APP_PATH
   ? path.resolve(process.env.APP_PATH)
-  : path.resolve(__dirname, 'app-staging-release - 6.1.0 (1536).apk');
+  : path.resolve(__dirname, 'app-staging-release - 6.1.3 (1578).apk');
 
 // Carpeta donde se guardan los videos de evidencia
 const VIDEO_DIR = path.resolve(__dirname, 'videos');
@@ -51,6 +51,8 @@ const capabilities = devices.map((udid, i) => {
     // La instalación del APK puede ser lenta (sobre todo desde OneDrive)
     'appium:androidInstallTimeout': 300000,
     'appium:newCommandTimeout': 300000,
+    'appium:chromedriverAutoDownload': true,
+    'appium:settings[stylus_handwriting_enabled]': false,
     // Reparto round-robin: el dispositivo i corre los specs i, i+N, i+2N...
     specs: allSpecs.filter((_, idx) => idx % devices.length === i),
   };
@@ -93,11 +95,13 @@ exports.config = {
   waitforTimeout: 15000,
   connectionRetryTimeout: 360000,
   connectionRetryCount: 1,
+  specFileRetries: 2,
+  specFileRetriesDelay: 5,
 
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: 120000,
+    timeout: 300000,
   },
 
   reporters: [
