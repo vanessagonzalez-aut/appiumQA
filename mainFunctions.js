@@ -126,6 +126,11 @@ async function primerCheckout(driver, cc) {
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_cardholder_name_input")').click()
   await typeText(driver,'Jhon')
   await driver.pause(3000)
+  await driver.hideKeyboard()
+  await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_billing_address_input")').click()
+  await typeText(driver,'12345')
+  await driver.hideKeyboard()
+
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/btnSubmitForm")').click()
   await driver.$('~Processing payment...').waitForDisplayed({timeout: 40000})
   await driver.$('~Payment successful!').waitForDisplayed({timeout: 40000})
