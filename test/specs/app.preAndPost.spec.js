@@ -40,6 +40,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
         await driver.$('~userOutline').click()
       }
       await driver.$('~solidSettings').click()
+      /*
       const { width, height } = await driver.getWindowSize()
       await driver.execute('mobile: scrollGesture', {
         left: width * 0.1,
@@ -49,12 +50,14 @@ describe('Travel doc pre and post payment are working correctly', () => {
         direction: 'down',
         percent: 0.75,
       })
+        */
+      await driver.$('~API URLs').scrollIntoView()
       await driver.$('~API URLs').click()
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
       await driver.pause(500)
       await mainFunctions.typeText(driver,branch)
-      //await driver.hideKeyboard()
+      await driver.hideKeyboard()
       await driver.$('~Confirm').click()
       await driver.$('~Welcome').waitForExist({ timeout: 5000 });
       await driver.$('~homeOutline').click()
@@ -131,7 +134,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     if (existingAccount === false){
       await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
       await mainFunctions.typeText(driver,email)
-      //await driver.hideKeyboard()
+      await driver.hideKeyboard()
     }
     await driver.$('~Continue to payment').click()
     await mainFunctions.primerCheckout(driver, '4000000000000010')
