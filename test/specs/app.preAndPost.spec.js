@@ -124,6 +124,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Order Review').waitForDisplayed()
 
     if (existingAccount === false){
+      await mainFunctions.scrollDown(driver)
       await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
       await mainFunctions.typeText(driver,email)
       await driver.hideKeyboard()
