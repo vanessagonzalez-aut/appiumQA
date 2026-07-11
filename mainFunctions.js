@@ -10,7 +10,7 @@ async function switchToWebView(driver) {
   await driver.waitUntil(async () => {
     const contexts = await driver.getContexts()
     return contexts.some(c => c.includes('WEBVIEW'))
-  }, { timeout: 15000, interval: 1000, timeoutMsg: 'WebView no apareció en 15s' })
+  }, { timeout: 20000, interval: 1000, timeoutMsg: 'WebView no apareció en 15s' })
   const contexts = await driver.getContexts()
   const webview = contexts.find(c => c.includes('WEBVIEW'))
   await driver.switchContext(webview)

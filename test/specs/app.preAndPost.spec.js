@@ -8,7 +8,6 @@ const mainFunctions = require('../../mainFunctions')
 
 
 describe('Travel doc pre and post payment are working correctly', () => {
-  /*
   const APP_ID = 'com.ivisa.services.stg';
   beforeEach(async () => {
     const state = await driver.queryAppState(APP_ID);
@@ -19,9 +18,8 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.activateApp(APP_ID); // abre la app antes de empezar las validaciones
     await mainFunctions.dismissStylusDialog(driver);
   });
-  */
   it('Navigate through an india application without errors', async () => {
-    /*
+
     await mainFunctions.uploadImageToDevice(driver, 'passport.jpeg')
     await mainFunctions.waitInitialScreen(driver)
     let existingAccount = true;
@@ -128,9 +126,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     }
     await driver.$('~Continue to payment').click()
     await mainFunctions.primerCheckout(driver, '4000000000000010')
-    */
     await mainFunctions.switchToWebView(driver)
-    /*
     await webSelectors.arrivalDate(driver, 'general.arrival_date')
     await webSelectors.dropdownSelectors(driver, 'general.port_of_arrival', 'dropdown-general.port_of_arrival', 'agatti', 'Agatti Seaport – Agatti Island')
     await webSelectors.dropdownSelectors(driver, 'general.ten_years_countries.0.country_where_boarded', 'dropdown-general.ten_years_countries.0.country_where_boarded', 'mexico', 'MX')
@@ -150,7 +146,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await nextPostPayment.click()
     
     await mainFunctions.uploadImageToDevice(driver, 'applicant.jpg')
-    */
     await webSelectors.fileUploadApplicant(driver)
   });
 });
