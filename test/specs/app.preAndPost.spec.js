@@ -41,15 +41,8 @@ describe('Travel doc pre and post payment are working correctly', () => {
       }
       await driver.$('~solidSettings').click()
       const { width, height } = await driver.getWindowSize()
-      await driver.execute('mobile: scrollGesture', {
-        left: width * 0.1,
-        top: height * 0.2,
-        width: width * 0.8,
-        height: height * 0.6,
-        direction: 'down',
-        percent: 0.75,
-      })
-      
+      await mainFunctions.scrollDown(driver)
+
       await driver.$('~API URLs').click()
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
@@ -99,6 +92,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await driver.$('~Browse Files').click()
       await mainFunctions.pickFileFromDevice(driver, 'passport.jpeg')
       await driver.$('~Personal details').waitForDisplayed({ timeout: 60000})
+      await mainFunctions.scrollDown(driver)
       await driver.$('~Gender\nSelect\nchevronDown, tap for more information on the below field').click()
       await driver.$('~Female').click()
       await driver.$('~Save and Continue').click()
@@ -110,6 +104,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Yes').click()
     await driver.$('~Have you ever been convicted of a criminal offense?\nSelect\nchevronDown, tap for more information on the below field').click({x: 20, y: 20})
     await driver.$('~No').click()
+    await mainFunctions.scrollDown(driver)
     await driver.$('~Reason for trip\nSelect\nchevronDown, tap for more information on the below field').click()
     await driver.$('~Tourism').click()
     await driver.$('~Do you have confirmed travel plans?\nSelect\nchevronDown, tap for more information on the below field').click()

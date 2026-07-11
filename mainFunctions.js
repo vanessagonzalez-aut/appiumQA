@@ -15,6 +15,16 @@ async function switchToWebView(driver) {
   const webview = contexts.find(c => c.includes('WEBVIEW'))
   await driver.switchContext(webview)
 }
+async function scrollDown(driver) {
+  await driver.execute('mobile: scrollGesture', {
+    left: width * 0.1,
+    top: height * 0.2,
+    width: width * 0.8,
+    height: height * 0.6,
+    direction: 'down',
+    percent: 0.75,
+  })
+}
 
 async function dismissStylusDialog(driver) {
   try {
@@ -144,5 +154,6 @@ module.exports = {
     uploadImageToDevice,
     pickFileFromDevice,
     waitInitialScreen,
-    primerCheckout
+    primerCheckout, 
+    scrollDown
 }
