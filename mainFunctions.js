@@ -16,6 +16,7 @@ async function switchToWebView(driver) {
   await driver.switchContext(webview)
 }
 async function scrollDown(driver) {
+  const { width, height } = await driver.getWindowSize()
   await driver.execute('mobile: scrollGesture', {
     left: width * 0.1,
     top: height * 0.2,

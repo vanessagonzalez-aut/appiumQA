@@ -40,7 +40,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
         await driver.$('~userOutline').click()
       }
       await driver.$('~solidSettings').click()
-      const { width, height } = await driver.getWindowSize()
       await mainFunctions.scrollDown(driver)
 
       await driver.$('~API URLs').click()
