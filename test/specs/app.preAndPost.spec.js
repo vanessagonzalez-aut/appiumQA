@@ -40,7 +40,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
         await driver.$('~userOutline').click()
       }
       await driver.$('~solidSettings').click()
-      /*
       const { width, height } = await driver.getWindowSize()
       await driver.execute('mobile: scrollGesture', {
         left: width * 0.1,
@@ -50,8 +49,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
         direction: 'down',
         percent: 0.75,
       })
-        */
-      await driver.$('~API URLs').scrollIntoView()
       await driver.$('~API URLs').click()
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
