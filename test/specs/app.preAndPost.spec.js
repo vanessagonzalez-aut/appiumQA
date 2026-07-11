@@ -40,6 +40,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
         await driver.$('~userOutline').click()
       }
       await driver.$('~solidSettings').click()
+      await driver.swipe()
       await driver.$('~API URLs').click()
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
