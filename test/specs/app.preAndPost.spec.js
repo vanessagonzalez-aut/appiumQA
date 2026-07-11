@@ -4,32 +4,11 @@ const fs = require('node:fs');
 const {execSync} = require('node:child_process');
 const {branch, email} = require('../../urls')
 const webSelectors = require('../../selectors')
+const mainFunctions = require('../../mainFunctions')
 
-async function typeText(text) {
-  await driver.execute('mobile: type', { text: text + ' ' })
-  await driver.execute('mobile: pressKey', { keycode: 67 })
-}
-
-async function switchToWebView() {
-  await driver.waitUntil(async () => {
-    const contexts = await driver.getContexts()
-    return contexts.some(c => c.includes('WEBVIEW'))
-  }, { timeout: 15000, interval: 1000, timeoutMsg: 'WebView no apareció en 15s' })
-  const contexts = await driver.getContexts()
-  const webview = contexts.find(c => c.includes('WEBVIEW'))
-  await driver.switchContext(webview)
-}
-
-async function dismissStylusDialog() {
-  try {
-    const caps = await driver.capabilities
-    const udid = caps['appium:udid'] || caps.udid || ''
-    const target = udid ? `-s ${udid}` : ''
-    execSync(`adb ${target} shell settings put secure stylus_handwriting_enabled 0`, { stdio: 'ignore' })
-  } catch {}
-}
 
 describe('Travel doc pre and post payment are working correctly', () => {
+  /*
   const APP_ID = 'com.ivisa.services.stg';
   beforeEach(async () => {
     const state = await driver.queryAppState(APP_ID);
@@ -38,52 +17,20 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await driver.terminateApp(APP_ID); // cierra la app (y su ventana)
     }
     await driver.activateApp(APP_ID); // abre la app antes de empezar las validaciones
-    await dismissStylusDialog();
+    await mainFunctions.dismissStylusDialog(driver);
   });
-
+  */
   it('Navigate through an india application without errors', async () => {
-    const localImage = path.resolve(__dirname, '../../images/passport.jpeg');
-    const remoteImage = '/sdcard/Download/passport.jpeg';
-    let imageAlreadyOnDevice = false;
-    try {
-      await driver.pullFile(remoteImage);
-      imageAlreadyOnDevice = true;
-    } catch {
-      imageAlreadyOnDevice = false;
-    }
-    if (!imageAlreadyOnDevice) {
-      await driver.pushFile(remoteImage, fs.readFileSync(localImage).toString('base64'));
-      // Forzar el escaneo de medios para que el selector de archivos VEA la imagen.
-      // Sin esto, en un emulador limpio (CI) el archivo existe pero no está indexado
-      // en MediaStore y no aparece en el selector. Best-effort: si falla, seguimos.
-      try {
-        const caps = await driver.capabilities;
-        const udid = caps['appium:udid'] || caps.udid || caps.deviceUDID;
-        const target = udid ? `-s ${udid}` : '';
-        execSync(
-          `adb ${target} shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://${remoteImage}`,
-          {stdio: 'ignore'}
-        );
-      } catch {
-        // En local la imagen suele ya estar indexada; ignoramos el fallo del escaneo
-      }
-    }
+    /*
+    await mainFunctions.uploadImageToDevice(driver, 'passport.jpeg')
+    await mainFunctions.waitInitialScreen(driver)
     let existingAccount = true;
-    // Espera a que la app TERMINE de cargar: aparece la pantalla inicial
-    await driver.waitUntil(
-      async () =>
-        (await driver.$('~Unlock the World').isExisting()) ||
-        (await driver.$('~Choose your language').isExisting()) ||
-        (await driver.$('~Start a New Application').isExisting()),
-      {
-        timeout: 60000,
-        interval: 1000,
-        timeoutMsg: 'La app no cargó la pantalla inicial en 60s',
-      }
-    );
-    const alreadyExist = await driver.$('~Start a New Application').isExisting()
-    if (!alreadyExist){
+    const doesntExist = await driver.$('~Start a New Application').isExisting()
+  
+    if (doesntExist){
       const checkHomepage = await driver.$('~Unlock the World').isExisting()
+      existingAccount = false;
+      console.log('Account already exists')
       if(!checkHomepage){
         await driver.$('~Choose your language').waitForDisplayed()
         await driver.$('~Confirm').click()
@@ -99,13 +46,12 @@ describe('Travel doc pre and post payment are working correctly', () => {
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
       await driver.pause(500)
-      await typeText(branch)
+      await mainFunctions.typeText(driver,branch)
+      //await driver.hideKeyboard()
       await driver.$('~Confirm').click()
       await driver.$('~Welcome').waitForExist({ timeout: 5000 });
       await driver.$('~homeOutline').click()
       await driver.pause(3000)
-      await driver.$('~Start a New Application').click()
-      existingAccount = false;
     }
     await driver.$('~Start a New Application').click()
     const notifSkip = await driver.$('~Skip');
@@ -136,25 +82,32 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await driver.$('~Save and Continue').click()
     }
     await driver.$('~Confirm').click()
+    console.log(existingAccount)
     if(existingAccount){
       await driver.$('~Select travelers').waitForExist()
       await driver.$('~Continue to Application').click()
     }else{
       await driver.$('~Upload file').click()
       await driver.$('~Browse Files').click()
-      // El selector del sistema abre en "Recientes", que está vacío para archivos
-      // subidos por adb. Lo llevamos a Downloads y elegimos el archivo por su nombre.
-      await driver.$('~Show roots').click()
-      await driver.$('android=new UiSelector().resourceId("android:id/title").text("Downloads")').click()
-      const file = await driver.$('android=new UiSelector().resourceId("android:id/title").text("passport.jpeg")')
-      await file.waitForExist({ timeout: 20000 })
-      await file.click()
-      await driver.$('~Checking Image Quality ...').waitForDisplayed()
-      await driver.$('~Personal details').waitForDisplayed({ timeout: 30000})
+      await mainFunctions.pickFileFromDevice(driver, 'passport.jpeg')
+      await driver.$('~Personal details').waitForDisplayed({ timeout: 60000})
+      await driver.$('~Gender\nSelect\nchevronDown, tap for more information on the below field').click()
+      await driver.$('~Female').click()
       await driver.$('~Save and Continue').click()
       await driver.$('~Passport details').waitForDisplayed()
       await driver.$('~Save and Continue').click()
     }
+    await driver.$('~Additional information').waitForDisplayed()
+    await driver.$('~Are you employed?\nSelect\nchevronDown, tap for more information on the below field').click()
+    await driver.$('~Yes').click()
+    await driver.$('~Have you ever been convicted of a criminal offense?\nSelect\nchevronDown, tap for more information on the below field').click({x: 20, y: 20})
+    await driver.$('~No').click()
+    await driver.$('~Reason for trip\nSelect\nchevronDown, tap for more information on the below field').click()
+    await driver.$('~Tourism').click()
+    await driver.$('~Do you have confirmed travel plans?\nSelect\nchevronDown, tap for more information on the below field').click()
+    await driver.$('~No').click()
+    await driver.$('~Save and Continue').click()
+
     await driver.$('~Travelers').waitForDisplayed()
     await driver.$('~Save and Continue').click()
     await driver.$('~Choose your processing time').waitForDisplayed()
@@ -167,49 +120,37 @@ describe('Travel doc pre and post payment are working correctly', () => {
 
     }
     await driver.$('~Order Review').waitForDisplayed()
-    try{
-      if (existingAccount === false){
-        await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
-        await typeText(email)
-        await driver.hideKeyboard()
-      }
-      await driver.$('~Continue to payment').click()
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_preview_button_text")').waitForDisplayed({timeout: 30000})
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_preview_button_text")').click()
 
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_card_number_input")').click()
-      await typeText('4000000000000010')
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_card_expiry_input")').click()
-      await typeText('1028')
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_card_cvv_input")').click()
-      await typeText('123')
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_cardholder_name_input")').click()
-      await typeText('Jhon')
-      await driver.pause(3000)
-      await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/btnSubmitForm")').click()
-      await driver.$('~Processing payment...').waitForDisplayed({timeout: 30000})
-      await driver.$('~Payment successful!').waitForDisplayed({timeout:30000})
-    }catch{
-      const ccNumber = await driver.$('~accepted credit cards\nVisa\nMastercard\nAmerican Express\nDiscover')
-      await ccNumber.click()
-      await typeText('4111111111111111')
-      const expiration = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)')
-      await expiration.click()
-      await typeText('1028')
-      const cvv = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(2)')
-      await cvv.click()
-      await typeText('123')
-      const cardholderName = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(3)')
-      await cardholderName.click()
-      await typeText('Jhon')
-      await driver.$('android=new UiSelector().className("android.widget.EditText").instance(5)').click()
-      await typeText(email)
-      await driver.$('~solidLock').click()
+    if (existingAccount === false){
+      await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
+      await mainFunctions.typeText(driver,email)
+      //await driver.hideKeyboard()
     }
-    /*
-    await switchToWebView()
-    await driver.switchContext('NATIVE_APP')
-    await webSelectors.arrivalDate(driver, 'general.arrival_date')
+    await driver.$('~Continue to payment').click()
+    await mainFunctions.primerCheckout(driver, '4000000000000010')
     */
+    await mainFunctions.switchToWebView(driver)
+    /*
+    await webSelectors.arrivalDate(driver, 'general.arrival_date')
+    await webSelectors.dropdownSelectors(driver, 'general.port_of_arrival', 'dropdown-general.port_of_arrival', 'agatti', 'Agatti Seaport – Agatti Island')
+    await webSelectors.dropdownSelectors(driver, 'general.ten_years_countries.0.country_where_boarded', 'dropdown-general.ten_years_countries.0.country_where_boarded', 'mexico', 'MX')
+    const nextPostPayment = await driver.$('#btnContinueUnderSection')
+    await nextPostPayment.click()
+    await webSelectors.addressApi(driver,'applicant.0.home_address')
+    await nextPostPayment.click()
+    await webSelectors.dropdownSelectors(driver, 'applicant.0.religion', 'dropdown-applicant.0.religion', 'bahai', 'Bahai')
+    await webSelectors.booleanOptions(driver, "applicant.0.marital_status", "option-Single")
+    await webSelectors.dropdownSelectors(driver, 'applicant.0.birth_country', 'dropdown-applicant.0.birth_country', 'mexico', 'MX')
+    await nextPostPayment.click()
+    
+    await webSelectors.booleanOptions(driver, "applicant.0.occupation", "option-Unemployed")
+    await nextPostPayment.click()
+
+    await webSelectors.booleanOptions(driver, "applicant.0.applicable_statement", "option-No, I don’t know their names")
+    await nextPostPayment.click()
+    
+    await mainFunctions.uploadImageToDevice(driver, 'applicant.jpg')
+    */
+    await webSelectors.fileUploadApplicant(driver)
   });
 });

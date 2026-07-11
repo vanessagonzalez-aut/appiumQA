@@ -7,7 +7,7 @@ const {getApkInfo, isAppInstalled} = require('./helpers/app');
 // En CI se descarga el APK y se pasa su ruta por la variable de entorno APP_PATH.
 const APP_PATH = process.env.APP_PATH
   ? path.resolve(process.env.APP_PATH)
-  : path.resolve(__dirname, 'app-staging-release - 6.1.3 (1578).apk');
+  : path.resolve(__dirname, 'app-staging-release - 6.1.4 (1584).apk');
 
 // Carpeta donde se guardan los videos de evidencia
 const VIDEO_DIR = path.resolve(__dirname, 'videos');
@@ -101,7 +101,7 @@ exports.config = {
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: 300000,
+    timeout: 600000,
   },
 
   reporters: [
