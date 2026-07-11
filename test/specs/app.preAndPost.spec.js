@@ -49,6 +49,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
         direction: 'down',
         percent: 0.75,
       })
+      
       await driver.$('~API URLs').click()
       const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
       await branchInput.click()
