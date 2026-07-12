@@ -1,1 +1,1 @@
-{"uid":"b1a8273437954620fa374b796ffaacdd","name":"behaviors","children":[{"name":"Navigate through an india application without errors","uid":"117fc39c439d312d","parentUid":"b1a8273437954620fa374b796ffaacdd","status":"broken","time":{"start":1783899081007,"stop":1783899253660,"duration":172653},"flaky":false,"newFailed":false,"newPassed":false,"newBroken":false,"retriesCount":0,"retriesStatusChange":false,"parameters":["emulator-5554"],"tags":[]}]}
+{"uid":"b1a8273437954620fa374b796ffaacdd","name":"behaviors","children":[]}
