@@ -134,7 +134,6 @@ async function primerCheckout(driver, cc) {
   await driver.$('~Processing payment...').waitForDisplayed({timeout: 40000})
   await driver.$('~Payment successful!').waitForDisplayed({timeout: 40000})
 }
-
 async function spreedly(driver) {
   const ccNumber = await driver.$('~accepted credit cards\nVisa\nMastercard\nAmerican Express\nDiscover')
   await ccNumber.click()
