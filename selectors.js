@@ -28,7 +28,7 @@ async function addressApi(page, name) {
     await driver.execute('mobile: type', { text: '123' + ' ' })
     await driver.$('#autocomplete_results').waitForDisplayed({timeout: 40000})
     await driver.$('#autocomplete-option-0').click()
-    await driver.pause(1000)
+    await driver.pause(3000)
 }
 async function fileUploadApplicant(driver) {
     await driver.$('button[data-handle="acceptFileUploadBtn"]').click()
