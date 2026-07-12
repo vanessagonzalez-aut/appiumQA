@@ -127,7 +127,7 @@ async function primerCheckout(driver, cc) {
   await typeText(driver,'Jhon')
   await driver.pause(3000)
   await driver.hideKeyboard()
-  await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_billing_address_input")').click()
+  await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_postal_code_input")').click()
   await typeText(driver,'12345')
   await driver.hideKeyboard()
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/btnSubmitForm")').click()
