@@ -15,6 +15,10 @@ async function switchToWebView(driver) {
   const webview = contexts.find(c => c.includes('WEBVIEW'))
   await driver.switchContext(webview)
 }
+async function switchToNativeApp(driver) {
+  await driver.switchContext('NATIVE_APP')
+}
+
 async function scrollDown(driver) {
   const { width, height } = await driver.getWindowSize()
   await driver.execute('mobile: scrollGesture', {
@@ -154,10 +158,11 @@ async function spreedly(driver) {
 module.exports = {
     typeText,
     switchToWebView,
+    switchToNativeApp,
     dismissStylusDialog,
     uploadImageToDevice,
     pickFileFromDevice,
     waitInitialScreen,
-    primerCheckout, 
+    primerCheckout,
     scrollDown
 }
