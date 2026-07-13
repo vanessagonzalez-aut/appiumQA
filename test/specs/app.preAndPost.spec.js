@@ -143,7 +143,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await webSelectors.booleanOptions(driver, "applicant.0.marital_status", "option-Single")
     await webSelectors.dropdownSelectors(driver, 'applicant.0.birth_country', 'dropdown-applicant.0.birth_country', 'mexico', 'MX')
     await nextPostPayment.click()
-    
+    await driver.pause(5000)
     await webSelectors.booleanOptions(driver, "applicant.0.occupation", "option-Unemployed")
     await nextPostPayment.click()
 
