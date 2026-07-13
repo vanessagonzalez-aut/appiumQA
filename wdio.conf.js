@@ -13,14 +13,20 @@ const APP_PATH = process.env.APP_PATH
 const VIDEO_DIR = path.resolve(__dirname, 'videos');
 
 // --- Detección de dispositivos y reparto de pruebas --------------------------
-// Listamos los emuladores/dispositivos conectados. Cada uno corre en paralelo
-// con su propia sesión. Las pruebas se reparten (round-robin) entre ellos.
-const devices = getConnectedDevices();
+// Este archivo se evalúa DOS veces: en el launcher y de nuevo en cada worker.
+// Detectamos los dispositivos solo en el launcher y los pasamos a los workers
+// por variable de entorno (la heredan), para no volver a llamar `adb devices`
+// en paralelo — invocaciones concurrentes pueden reiniciar el servidor adb y
+// devolver una lista vacía de forma intermitente.
+const devices = process.env.WDIO_DETECTED_DEVICES
+  ? process.env.WDIO_DETECTED_DEVICES.split(',')
+  : getConnectedDevices();
 if (devices.length === 0) {
   throw new Error(
     'No hay dispositivos conectados. Levanta un emulador (o conecta un teléfono) y verifica con `adb devices`.'
   );
 }
+process.env.WDIO_DETECTED_DEVICES = devices.join(',');
 
 // Lista de archivos de prueba (cada *.js dentro de test/specs es una prueba)
 const specsDir = path.resolve(__dirname, 'test', 'specs');
