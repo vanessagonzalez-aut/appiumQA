@@ -18,9 +18,9 @@ const dropdownSelectors = async (driver, name, datahandle, text, value) =>{
     await driver.pause(1000)
 }
 async function booleanOptions(driver, name, dataHandle) {
-    await driver.pause(1000)
+    await driver.pause(3000)
     await driver.$('div[name="' + name + '"]').$('div[data-handle="' + dataHandle + '"]').click()
-    await driver.pause(1000)
+    await driver.pause(3000)
 }
 
 async function addressApi(page, name) {
