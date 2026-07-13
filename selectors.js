@@ -35,7 +35,10 @@ async function fileUploadApplicant(driver) {
     await driver.$('button[data-handle="try-another-way-button"]').click()
 
     const locationTryAnotherWay = await driver.$('button[data-handle="try-another-way-button"]').getLocation()
-    await driver.tap({x: Math.round(locationTryAnotherWay.x), y: Math.round(locationTryAnotherWay.y + 45)})
+    const { width, height } = await driver.getWindowSize()
+    const x = Math.min(Math.max(Math.round(locationTryAnotherWay.x), 0), width - 1)
+    const y = Math.min(Math.max(Math.round(locationTryAnotherWay.y + 45), 0), height - 1)
+    await driver.tap({x, y})
 }
 module.exports = {
     arrivalDate,
