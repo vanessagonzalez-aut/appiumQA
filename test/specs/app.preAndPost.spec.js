@@ -155,5 +155,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.pause(5000)
     await mainFunctions.switchToNativeApp(driver)
     await mainFunctions.pickFileFromDevice(driver, 'applicant.jpg')
+    await driver.pause(5000)
   });
 });
