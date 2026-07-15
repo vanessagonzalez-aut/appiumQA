@@ -132,6 +132,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Continue to payment').click()
     await mainFunctions.primerCheckout(driver, '4000000000000010')
     await mainFunctions.switchToWebView(driver)
+    await driver.$(`input[name="${name}"]`).waitForDisplayed({timeout: 70000})
     await webSelectors.arrivalDate(driver, 'general.arrival_date')
     await webSelectors.dropdownSelectors(driver, 'general.port_of_arrival', 'dropdown-general.port_of_arrival', 'agatti', 'Agatti Seaport – Agatti Island')
     await webSelectors.dropdownSelectors(driver, 'general.ten_years_countries.0.country_where_boarded', 'dropdown-general.ten_years_countries.0.country_where_boarded', 'mexico', 'MX')
@@ -143,18 +144,16 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await webSelectors.booleanOptions(driver, "applicant.0.marital_status", "option-Single")
     await webSelectors.dropdownSelectors(driver, 'applicant.0.birth_country', 'dropdown-applicant.0.birth_country', 'mexico', 'MX')
     await nextPostPayment.click()
-    await driver.pause(5000)
+    await await driver.$('div[name="applicant.0.occupation"]').waitForDisplayed({timeout: 30000})
     await webSelectors.booleanOptions(driver, "applicant.0.occupation", "option-Unemployed")
     await nextPostPayment.click()
 
     await webSelectors.booleanOptions(driver, "applicant.0.applicable_statement", "option-No, I don’t know their names")
     await nextPostPayment.click()
-    
     await mainFunctions.uploadImageToDevice(driver, 'applicant.jpg')
-    await webSelectors.fileUploadApplicant(driver)
-    await driver.pause(5000)
+    await webSelectors.selectFileUploadOption(driver)
     await mainFunctions.switchToNativeApp(driver)
-    await mainFunctions.pickFileFromDevice(driver, 'applicant.jpg')
+    await webSelectors.fileUploadQuestion(driver, 'applicant.jpg')
     await driver.pause(5000)
   });
 });

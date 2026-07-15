@@ -30,7 +30,7 @@ async function addressApi(page, name) {
     await driver.$('#autocomplete-option-0').click()
     await driver.pause(3000)
 }
-async function fileUploadApplicant(driver) {
+async function selectFileUploadOption(driver) {
     await driver.$('button[data-handle="acceptFileUploadBtn"]').click()
     await driver.$('button[data-handle="try-another-way-button"]').click()
 
@@ -40,10 +40,17 @@ async function fileUploadApplicant(driver) {
     const y = Math.min(Math.max(Math.round(locationTryAnotherWay.y + 45), 0), height - 1)
     await driver.tap({x, y})
 }
+
+async function fileUploadQuestion(driver, file) {
+    const searchResult = await driver.$(`android=new UiSelector().textContains("${file}")`)
+    await searchResult.waitForExist({ timeout: 10000 })
+    await searchResult.click()
+}
 module.exports = {
     arrivalDate,
     dropdownSelectors,
     booleanOptions,
     addressApi,
-    fileUploadApplicant
+    selectFileUploadOption,
+    fileUploadQuestion
 }
