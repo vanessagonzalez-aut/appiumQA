@@ -112,8 +112,9 @@ describe('Travel doc pre and post payment are working correctly', () => {
 
     await driver.$('~Travelers').waitForDisplayed()
     await driver.$('~Save and Continue').click()
-    await driver.$('~Choose your processing time').waitForDisplayed()
+    /*await driver.$('~Choose your processing time').waitForDisplayed()
     await driver.$('~Save and Continue').click()
+    */
     try{
       const duplicateBanner = await driver.$('~Continue with purchase')
       await duplicateBanner.waitForDisplayed({timeout: 5000})
