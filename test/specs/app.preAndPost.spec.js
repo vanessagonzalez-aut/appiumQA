@@ -133,7 +133,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await driver.$('~Continue to payment').click()
     await mainFunctions.primerCheckout(driver, '4000000000000010')
     await mainFunctions.switchToWebView(driver)
-    await driver.$(`input[name="${name}"]`).waitForDisplayed({timeout: 70000})
+    await driver.$(`input[name="general.arrival_date"]`).waitForDisplayed({timeout: 70000})
     await webSelectors.arrivalDate(driver, 'general.arrival_date')
     await webSelectors.dropdownSelectors(driver, 'general.port_of_arrival', 'dropdown-general.port_of_arrival', 'agatti', 'Agatti Seaport – Agatti Island')
     await webSelectors.dropdownSelectors(driver, 'general.ten_years_countries.0.country_where_boarded', 'dropdown-general.ten_years_countries.0.country_where_boarded', 'mexico', 'MX')
