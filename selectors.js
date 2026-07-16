@@ -46,11 +46,19 @@ async function fileUploadQuestion(driver, file) {
     await searchResult.waitForExist({ timeout: 10000 })
     await searchResult.click()
 }
+
+async function contactDetails(driver) {
+    await driver.$('input[name="telephone"]').addValue("123456123")
+    await driver.pause(3000)
+    await driver.$('div[name="general.order_notification_signup"]').$('div[data-handle="option-Neither"]').click()
+    await driver.pause(3000)
+}
 module.exports = {
     arrivalDate,
     dropdownSelectors,
     booleanOptions,
     addressApi,
     selectFileUploadOption,
-    fileUploadQuestion
+    fileUploadQuestion,
+    contactDetails
 }

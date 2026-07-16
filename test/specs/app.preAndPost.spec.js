@@ -19,7 +19,6 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await mainFunctions.dismissStylusDialog(driver);
   });
   it('Navigate through an india application without errors', async () => {
-
     await mainFunctions.uploadImageToDevice(driver, 'passport.jpeg')
     await mainFunctions.waitInitialScreen(driver)
     let existingAccount = true;
@@ -47,7 +46,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await branchInput.click()
       await driver.pause(500)
       await mainFunctions.typeText(driver,branch)
-      await driver.hideKeyboard()
+      await mainFunctions.hideKeyboardSafely(driver)
       await driver.$('~Confirm').click()
       await driver.$('~Welcome').waitForExist({ timeout: 5000 });
       await driver.$('~homeOutline').click()
@@ -128,7 +127,7 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await mainFunctions.scrollDown(driver)
       await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
       await mainFunctions.typeText(driver,email)
-      await driver.hideKeyboard()
+      await mainFunctions.hideKeyboardSafely(driver)
     }
     await driver.$('~Continue to payment').click()
     await mainFunctions.primerCheckout(driver, '4000000000000010')
@@ -151,10 +150,23 @@ describe('Travel doc pre and post payment are working correctly', () => {
 
     await webSelectors.booleanOptions(driver, "applicant.0.applicable_statement", "option-No, I don’t know their names")
     await nextPostPayment.click()
+      
+
     await mainFunctions.uploadImageToDevice(driver, 'applicant.jpg')
     await webSelectors.selectFileUploadOption(driver)
     await mainFunctions.switchToNativeApp(driver)
+    await mainFunctions.checkDeviceUpload(driver)
+
     await webSelectors.fileUploadQuestion(driver, 'applicant.jpg')
-    await driver.pause(5000)
+    await mainFunctions.switchToWebView(driver)
+    await driver.$("p=Your upload passed our initial review!").waitForDisplayed({timeout: 30000})
+    const nextPostPaymentUpload = await driver.$('#review-continue')
+    await nextPostPaymentUpload.click()
+
+    await driver.$("p=Your upload passed our initial review!").waitForDisplayed({timeout: 30000})
+    await nextPostPaymentUpload.click()
+    await nextPostPayment.click()
+    await webSelectors.contactDetails(driver)
+    await driver.$('#btnSubmitApplication').click()
   });
 });

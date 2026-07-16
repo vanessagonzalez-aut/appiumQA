@@ -6,6 +6,15 @@ async function typeText(driver,text) {
 
 }
 
+async function hideKeyboardSafely(driver) {
+  try {
+    const isShown = await driver.isKeyboardShown()
+    if (isShown) await driver.hideKeyboard()
+  } catch {
+    // Algunos IME de dispositivos físicos no soportan ocultar el teclado; lo ignoramos
+  }
+}
+
 async function switchToWebView(driver) {
   await driver.waitUntil(async () => {
     const contexts = await driver.getContexts()
@@ -129,11 +138,15 @@ async function primerCheckout(driver, cc) {
   await typeText(driver,'123')
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_cardholder_name_input")').click()
   await typeText(driver,'Jhon')
-  await driver.pause(3000)
-  await driver.hideKeyboard()
-  await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_postal_code_input")').click()
-  await typeText(driver,'12345')
-  await driver.hideKeyboard()
+  //await hideKeyboardSafely(driver)
+  try{
+    await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_postal_code_input")').waitForDisplayed({timeout: 2000})
+    await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_postal_code_input")').click()
+    await typeText(driver,'12345')
+    await hideKeyboardSafely(driver)
+  }catch{
+
+  }
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/btnSubmitForm")').click()
   await driver.$('~Processing payment...').waitForDisplayed({timeout: 40000})
   await driver.$('~Payment successful!').waitForDisplayed({timeout: 40000})
@@ -155,8 +168,16 @@ async function spreedly(driver) {
   await typeText(email)
   await driver.$('~solidLock').click()
 }
+async function checkDeviceUpload(driver) {
+  try{
+    await await driver.$(`android=new UiSelector().text("Selector de medios")`).waitForDisplayed({timeout: 5000})
+    await await driver.$(`android=new UiSelector().text("Selector de medios")`).click()
+  }catch{
+  }
+}
 module.exports = {
     typeText,
+    hideKeyboardSafely,
     switchToWebView,
     switchToNativeApp,
     dismissStylusDialog,
@@ -164,5 +185,6 @@ module.exports = {
     pickFileFromDevice,
     waitInitialScreen,
     primerCheckout,
-    scrollDown
+    scrollDown,
+    checkDeviceUpload
 }
