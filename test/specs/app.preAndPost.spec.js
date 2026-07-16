@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const {execSync} = require('node:child_process');
 const {branch, email} = require('../../urls')
 const webSelectors = require('../../selectors')
-const mainFunctions = require('../../mainFunctions')
+const mainFunctions = require('../../mainFunctions');
+const { WASI } = require('node:wasi');
 
 
 describe('Travel doc pre and post payment are working correctly', () => {
@@ -168,5 +169,16 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await nextPostPayment.click()
     await webSelectors.contactDetails(driver)
     await driver.$('#btnSubmitApplication').click()
+    await mainFunctions.switchToNativeApp(driver)
+    await driver.$('~Go Home').waitForDisplayed({timeout: 30000})
+    await driver.$('~Go Home').click()
+    await driver.$("~How easy or difficult was it to complete your application?").waitForDisplayed({timeout: 5000})
+    await driver.$('~closeOutline').click()
+    await driver.$("~Not this time, thanks").waitForDisplayed({timeout: 5000})
+    await driver.$("~Not this time, thanks").click()
+    await driver.$("~Ask me later").waitForDisplayed({timeout: 5000})
+    await driver.$("~Ask me later").click()
+    await driver.$("~Start a New Application").waitForDisplayed({timeout: 5000})
+
   });
 });
