@@ -155,6 +155,7 @@ async function primerCheckout(driver, cc, shouldExist) {
       await driver.$("~Welcome back").waitForDisplayed({timeout: 10000})
       await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
       await typeText(driver, 'testivisa5!')
+      await hideKeyboardSafely(driver)
       await driver.$('~Continue').click()
     }catch{
 
