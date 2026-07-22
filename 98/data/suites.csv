@@ -1,0 +1,3 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","185236","Navigate through an india application without errors","Travel doc pre and post payment are working correctly","2026-07-22","broken","2026-07-22","","","",""
+"","319735","Setup account with password login for Turkey eVisa","Setup Account","2026-07-22","passed","2026-07-22","","","",""
