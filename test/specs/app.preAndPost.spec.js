@@ -31,16 +31,16 @@ describe('Travel doc pre and post payment are working correctly', () => {
     }else{
       await mainFunctions.nonExistingAccountInfo(driver, 'Upload file')
     }
-    await driver.$('~Save and Continue').click()
+    await driver.$('~Travelers').waitForDisplayed()
+    await driver.$('~Save and Continue').click() 
     try{
       await driver.$('~Choose your processing time').waitForDisplayed({timeout: 3000})
       await driver.$('~Save and Continue').click()
     }catch{
 
     }
-    await driver.$('~Travelers').waitForDisplayed()
-    await driver.$('~Save and Continue').click() 
     await mainFunctions.checkDuplicateBanner(driver)
+    
     await driver.$('~Order Review').waitForDisplayed()
 
     if (existingAccount === false){
