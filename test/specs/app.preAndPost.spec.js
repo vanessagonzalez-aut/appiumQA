@@ -11,117 +11,37 @@ const { WASI } = require('node:wasi');
 describe('Travel doc pre and post payment are working correctly', () => {
   const APP_ID = 'com.ivisa.services.stg';
   beforeEach(async () => {
-    const state = await driver.queryAppState(APP_ID);
-    // estados: 0=no instalada, 1=no corriendo, 2=segundo plano, 3=suspendida, 4=primer plano
-    if (state >= 2) {
-      await driver.terminateApp(APP_ID); // cierra la app (y su ventana)
-    }
-    await driver.activateApp(APP_ID); // abre la app antes de empezar las validaciones
-    await mainFunctions.dismissStylusDialog(driver);
-  });
+    mainFunctions.checkIfAppIsOpen(driver, APP_ID)
+  })
   it('Navigate through an india application without errors', async () => {
     await mainFunctions.uploadImageToDevice(driver, 'passport.jpeg')
     await mainFunctions.waitInitialScreen(driver)
-    let existingAccount = true;
-    const doesntExist = await driver.$('~Start a New Application').isExisting()
-  
-    if (doesntExist){
-      const checkHomepage = await driver.$('~Unlock the World').isExisting()
-      existingAccount = false;
-      console.log('Account already exists')
-      if(!checkHomepage){
-        await driver.$('~Choose your language').waitForDisplayed()
-        await driver.$('~Confirm').click()
-        await driver.$('~Continue').click()
-        await driver.$('~Skip').click()
-        await driver.$('~back').click()
-        await driver.$('~userOutline').click()
-      }else{
-        await driver.$('~userOutline').click()
-      }
-      await driver.$('~solidSettings').click()
-      await mainFunctions.scrollDown(driver)
+    const doesntExist = await driver.$('~Unlock the World').isExisting()
+    const firstTime = await driver.$('~Choose your language').isExisting()
+    const accountExistResult = await mainFunctions.checkExistingAccount(driver, firstTime, doesntExist, branch)
+    let existingAccount = accountExistResult;
 
-      await driver.$('~API URLs').click()
-      const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
-      await branchInput.click()
-      await driver.pause(500)
-      await mainFunctions.typeText(driver,branch)
-      await mainFunctions.hideKeyboardSafely(driver)
-      await driver.$('~Confirm').click()
-      await driver.$('~Welcome').waitForExist({ timeout: 5000 });
-      await driver.$('~homeOutline').click()
-      await driver.pause(3000)
-    }
     await driver.$('~Start a New Application').click()
-    const notifSkip = await driver.$('~Skip');
-    try {
-      await notifSkip.waitForExist({ timeout: 5000 });
-      await notifSkip.click();
-    } catch {
-      // No apareció la pantalla de notificaciones; seguimos
-    }
-    try{
-      await driver.$('~My passport is from\nUnited States\nsolidPassport, tap for more information on the below field').waitForExist({ timeout: 5000 });
-      await driver.$('~My passport is from\nUnited States\nsolidPassport, tap for more information on the below field').click()
-    }catch{
-      await driver.$('~My passport is from\nMexico\nsolidPassport, tap for more information on the below field').waitForExist({ timeout: 5000 });
-      await driver.$('~My passport is from\nMexico\nsolidPassport, tap for more information on the below field').click()
-    }
-    const countryInput = 'new UiSelector().className("android.widget.EditText").instance(1)'
-    await driver.$(`android=${countryInput}`).addValue('mexico')
-    await driver.$('~Mexico').click()
-    await driver.$("~I'm going to\nSelect\nsearchOutline, tap for more information on the below field").click()
-    await driver.$(`android=${countryInput}`).addValue('india')
-    await driver.$('~India').click()
-    await driver.$('~Get Started!').click()
-    try {
-      await driver.$('~Apply now').waitForExist({ timeout: 3000 });
-      await driver.$('~Apply now').click();
-    } catch {
-      await driver.$('~Save and Continue').click()
-    }
+    await mainFunctions.checkNotificationScreen(driver)
+    await mainFunctions.changeUserNationalityS1(driver, "Mexico", 'India')
     await driver.$('~Confirm').click()
-    console.log(existingAccount)
+    
     if(existingAccount){
-      await driver.$('~Select travelers').waitForExist()
-      await driver.$('~Continue to Application').click()
+      await mainFunctions.existingAccountEditInfo(driver)
     }else{
-      await driver.$('~Upload file').click()
-      await driver.$('~Browse Files').click()
-      await mainFunctions.pickFileFromDevice(driver, 'passport.jpeg')
-      await driver.$('~Personal details').waitForDisplayed({ timeout: 60000})
-      await mainFunctions.scrollDown(driver)
-      await driver.$('~Gender\nSelect\nchevronDown, tap for more information on the below field').click()
-      await driver.$('~Female').click()
-      await driver.$('~Save and Continue').click()
-      await driver.$('~Passport details').waitForDisplayed()
-      await driver.$('~Save and Continue').click()
+      await mainFunctions.nonExistingAccountInfo(driver, 'Upload file')
     }
-    await driver.$('~Additional information').waitForDisplayed()
-    await driver.$('~Are you employed?\nSelect\nchevronDown, tap for more information on the below field').click()
-    await driver.$('~Yes').click()
-    await driver.$('~Have you ever been convicted of a criminal offense?\nSelect\nchevronDown, tap for more information on the below field').click({x: 20, y: 20})
-    await driver.$('~No').click()
-    await mainFunctions.scrollDown(driver)
-    await driver.$('~Reason for trip\nSelect\nchevronDown, tap for more information on the below field').click()
-    await driver.$('~Tourism').click()
-    await driver.$('~Do you have confirmed travel plans?\nSelect\nchevronDown, tap for more information on the below field').click()
-    await driver.$('~No').click()
     await driver.$('~Save and Continue').click()
 
     await driver.$('~Travelers').waitForDisplayed()
     await driver.$('~Save and Continue').click()
-    /*await driver.$('~Choose your processing time').waitForDisplayed()
-    await driver.$('~Save and Continue').click()
-    */
     try{
-      const duplicateBanner = await driver.$('~Continue with purchase')
-      await duplicateBanner.waitForDisplayed({timeout: 5000})
-      await duplicateBanner.click()
+      await driver.$('~Choose your processing time').waitForDisplayed({timeout: 3000})
+      await driver.$('~Save and Continue').click()
     }catch{
 
     }
+    await mainFunctions.checkDuplicateBanner(driver)
     await driver.$('~Order Review').waitForDisplayed()
 
     if (existingAccount === false){
@@ -131,7 +51,9 @@ describe('Travel doc pre and post payment are working correctly', () => {
       await mainFunctions.hideKeyboardSafely(driver)
     }
     await driver.$('~Continue to payment').click()
-    await mainFunctions.primerCheckout(driver, '4000000000000010')
+    await mainFunctions.primerCheckout(driver, '4000000000000010', true)
+  
+    
     await mainFunctions.switchToWebView(driver)
     await driver.$(`input[name="general.arrival_date"]`).waitForDisplayed({timeout: 70000})
     await webSelectors.arrivalDate(driver, 'general.arrival_date')
@@ -169,16 +91,8 @@ describe('Travel doc pre and post payment are working correctly', () => {
     await nextPostPayment.click()
     await webSelectors.contactDetails(driver)
     await driver.$('#btnSubmitApplication').click()
-    await mainFunctions.switchToNativeApp(driver)
-    await driver.$('~Go Home').waitForDisplayed({timeout: 30000})
-    await driver.$('~Go Home').click()
-    await driver.$("~How easy or difficult was it to complete your application?").waitForDisplayed({timeout: 5000})
-    await driver.$('~closeOutline').click()
-    await driver.$("~Not this time, thanks").waitForDisplayed({timeout: 5000})
-    await driver.$("~Not this time, thanks").click()
-    await driver.$("~Ask me later").waitForDisplayed({timeout: 5000})
-    await driver.$("~Ask me later").click()
-    await driver.$("~Start a New Application").waitForDisplayed({timeout: 5000})
 
+    await mainFunctions.switchToNativeApp(driver)
+    await mainFunctions.postPaymentProcess(driver)
   });
 });

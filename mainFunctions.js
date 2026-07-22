@@ -127,7 +127,7 @@ async function waitInitialScreen(driver) {
   );
 }
 
-async function primerCheckout(driver, cc) {
+async function primerCheckout(driver, cc, shouldExist) {
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_preview_button_text")').waitForDisplayed({timeout: 30000})
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_preview_button_text")').click()
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/card_form_card_number_input")').click()
@@ -150,6 +150,17 @@ async function primerCheckout(driver, cc) {
   await driver.$('android=new UiSelector().resourceId("com.ivisa.services.stg:id/btnSubmitForm")').click()
   await driver.$('~Processing payment...').waitForDisplayed({timeout: 40000})
   await driver.$('~Payment successful!').waitForDisplayed({timeout: 40000})
+  if(shouldExist){
+    try{
+      await driver.$("~Welcome back").waitForDisplayed({timeout: 10000})
+      await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)').click()
+      await typeText(driver, 'testivisa5!')
+      await driver.$('~Continue').click()
+    }catch{
+
+    }
+  }
+  
 }
 async function spreedly(driver) {
   const ccNumber = await driver.$('~accepted credit cards\nVisa\nMastercard\nAmerican Express\nDiscover')
@@ -157,10 +168,10 @@ async function spreedly(driver) {
   await typeText ('4111111111111111')
   const expiration = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(1)')
   await expiration.click()
-  await typeText ('1028')
+  await typeText('1028')
   const cvv = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(2)')
   await cvv.click()
-  await typeText ('123')
+  await typeText('123')
   const cardholderName = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(3)')
   await cardholderName.click()
   await typeText ('Jhon')
@@ -175,16 +186,210 @@ async function checkDeviceUpload(driver) {
   }catch{
   }
 }
+async function checkExistingAccount(driver, firstTime, doesntExist, branch) {
+  if (firstTime){
+    await driver.$('~Choose your language').waitForDisplayed()
+    await driver.$('~Confirm').click()
+    await driver.$('~Continue').click()
+    await driver.$('~Skip').click()
+    await driver.$('~back').click()
+    await driver.$('~userOutline').click()
+    await driver.$('~solidSettings').click()
+    await scrollDown(driver)
+    await driver.$('~API URLs').click()
+    const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
+    await branchInput.click()
+    await driver.pause(500)
+    await typeText(driver,branch)
+    await hideKeyboardSafely(driver)
+    await driver.$('~Confirm').click()
+    await driver.$('~Welcome').waitForExist({ timeout: 5000 });
+    await driver.$('~homeOutline').click()
+    await driver.pause(3000)
+    return false
+  }else if(doesntExist){
+    await driver.$('~userOutline').click()
+    await driver.$('~solidSettings').click()
+    await scrollDown(driver)
+    await driver.$('~API URLs').click()
+    const branchInput = await driver.$('android=new UiSelector().className("android.widget.EditText").instance(0)')
+    await branchInput.click()
+    await driver.pause(500)
+    await typeText(driver,branch)
+    await hideKeyboardSafely(driver)
+    await driver.$('~Confirm').click()
+    await driver.$('~Welcome').waitForExist({ timeout: 5000 });
+    await driver.$('~homeOutline').click()
+    await driver.pause(3000)
+    return false
+  }
+  return true
+}
+
+async function checkIfAppIsOpen(driver, APP_ID) {
+  const state = await driver.queryAppState(APP_ID);
+  // estados: 0=no instalada, 1=no corriendo, 2=segundo plano, 3=suspendida, 4=primer plano
+  if (state >= 2) {
+    await driver.terminateApp(APP_ID); // cierra la app (y su ventana)
+  }
+  await driver.activateApp(APP_ID); // abre la app antes de empezar las validaciones
+  await dismissStylusDialog(driver);
+}
+
+async function checkNotificationScreen(driver) {
+    const notifSkip = await driver.$('~Skip');
+    try {
+      await notifSkip.waitForExist({ timeout: 5000 });
+      await notifSkip.click();
+    } catch {
+      // No apareció la pantalla de notificaciones; seguimos
+    }
+}
+
+async function changeUserNationalityS1(driver, nationality, destination) {
+ try{
+    await driver.$('~My passport is from\nUnited States\nsolidPassport, tap for more information on the below field').waitForExist({ timeout: 3000 });
+    await driver.$('~My passport is from\nUnited States\nsolidPassport, tap for more information on the below field').click()
+  }catch{
+    await driver.$('~My passport is from\nMexico\nsolidPassport, tap for more information on the below field').waitForExist({ timeout: 3000 });
+    await driver.$('~My passport is from\nMexico\nsolidPassport, tap for more information on the below field').click()
+  }
+
+  const countryInput = 'new UiSelector().className("android.widget.EditText").instance(1)'
+  await driver.$(`android=${countryInput}`).addValue(`${nationality}`)
+  await driver.$(`~${nationality}`).click()
+  await driver.$("~I'm going to\nSelect\nsearchOutline, tap for more information on the below field").click()
+  await driver.$(`android=${countryInput}`).addValue(`${destination}`)
+  await driver.$(`~${destination}`).click()
+  await driver.$('~Get Started!').click()
+
+  try {
+    await driver.$('~Apply now').waitForExist({ timeout: 3000 });
+    await driver.$('~Apply now').click();
+  } catch {
+    await driver.$('~Save and Continue').click()
+  }
+}
+
+async function passportScanPre(driver, selector) {
+  await driver.$(`~${selector}`).click()
+  await driver.$('~Browse Files').click()
+  await pickFileFromDevice(driver, 'passport.jpeg')
+}
+
+async function additionalInfoStep(driver) {
+  await driver.$('~Are you employed?\nSelect\nchevronDown, tap for more information on the below field').click()
+  await driver.$('~Yes').click()
+  await driver.$('~Have you ever been convicted of a criminal offense?\nSelect\nchevronDown, tap for more information on the below field').click({x: 20, y: 20})
+  await driver.$('~No').click()
+  await scrollDown(driver)
+  await driver.$('~Reason for trip\nSelect\nchevronDown, tap for more information on the below field').click()
+  await driver.$('~Tourism').click()
+  await driver.$('~Do you have confirmed travel plans?\nSelect\nchevronDown, tap for more information on the below field').click()
+  await driver.$('~No').click()
+}
+
+async function checkDuplicateBanner(driver) {
+  try{
+    const duplicateBanner = await driver.$('~Continue with purchase')
+    await duplicateBanner.waitForDisplayed({timeout: 5000})
+    await duplicateBanner.click()
+  }catch{
+  }
+}
+
+async function postPaymentProcess(driver) {
+  await driver.$('~Go Home').waitForDisplayed({timeout: 30000})
+  await driver.$('~Go Home').click()
+  await driver.$("~How easy or difficult was it to complete your application?").waitForDisplayed({timeout: 5000})
+  await driver.$('~closeOutline').click()
+  try{
+    await driver.$("~Ask me later").waitForDisplayed({timeout: 5000})
+    await driver.$("~Ask me later").click()
+    await driver.$("~Not this time, thanks").waitForDisplayed({timeout: 3000})
+    await driver.$("~Not this time, thanks").click()
+  }catch{
+    if(await driver.$("~Not this time, thanks").isDisplayed()){
+      await driver.$("~Not this time, thanks").waitForDisplayed({timeout: 5000})
+      await driver.$("~Not this time, thanks").click()
+      await driver.$("~Ask me later").waitForDisplayed({timeout: 5000})
+      await driver.$("~Ask me later").click()
+    }
+  }
+  await driver.$("~Start a New Application").waitForDisplayed({timeout: 5000})
+}
+
+async function existingAccountEditInfo(driver) {
+  await driver.$('~Select travelers').waitForExist()
+  await driver.$('~Continue to Application').click()
+  await driver.$('~solidEdit').click()
+  try{
+    await driver.$('~Ok').waitForDisplayed({ timeout: 5000})
+    await driver.$('~Ok').click()
+    await driver.$('~Gender\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click()
+    await driver.$('~Female').click()
+    await scrollDown(driver)
+    await driver.$('~Country of residence\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click()
+    const countryInput = 'new UiSelector().className("android.widget.EditText").instance(1)'
+    await driver.$(`android=${countryInput}`).click()
+    await typeText(driver, 'Mexico')
+    await driver.$(`~Mexico`).click()
+    await driver.pause(2000)
+    await scrollDown(driver)
+    await driver.$('~Are you employed?\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click()
+    await driver.$('~Yes').click()
+    await driver.$('~Have you ever been convicted of a criminal offense?\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click({x: 20, y: 20})
+    await driver.$('~No').click()
+    await scrollDown(driver)
+    await driver.$('~Reason for trip\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click()
+    await driver.$('~Tourism').click()
+    await driver.$('~Do you have confirmed travel plans?\nSelect\nchevronDown\nThis field cannot be empty, tap for more information on the below field').click()
+    await driver.$('~No').click()
+    await driver.$('~Save Changes').click()
+    await additionalInfoStep(driver)
+  }catch{
+    await scrollDown(driver)
+    await additionalInfoStep(driver)
+    await driver.$('~Save Changes').click()
+  }
+}
+async function nonExistingAccountInfo(driver, scanCopy) {
+  await passportScanPre(driver, scanCopy)
+  await driver.$('~Personal details').waitForDisplayed({ timeout: 60000})
+  await scrollDown(driver)
+  await driver.$('~Gender\nSelect\nchevronDown, tap for more information on the below field').click()
+  await driver.$('~Female').click()
+  await driver.$('~Save and Continue').click()
+  await driver.$('~Passport details').waitForDisplayed()
+  await driver.$('~Passport\nAustralia\nchevronDown, tap for more information on the below field').click()
+  const countryInput = 'new UiSelector().className("android.widget.EditText").instance(1)'
+  await driver.$(`android=${countryInput}`).addValue('mexico')
+  await driver.$('~Mexico').click()
+  await driver.$('~Save and Continue').click()
+  await driver.$('~Additional information').waitForDisplayed()
+  await additionalInfoStep(driver)
+  await driver.$('~Save and Continue').click()
+}
 module.exports = {
-    typeText,
-    hideKeyboardSafely,
-    switchToWebView,
-    switchToNativeApp,
-    dismissStylusDialog,
-    uploadImageToDevice,
-    pickFileFromDevice,
-    waitInitialScreen,
-    primerCheckout,
-    scrollDown,
-    checkDeviceUpload
+  typeText,
+  hideKeyboardSafely,
+  switchToWebView,
+  switchToNativeApp,
+  dismissStylusDialog,
+  uploadImageToDevice,
+  pickFileFromDevice,
+  waitInitialScreen,
+  primerCheckout,
+  scrollDown,
+  checkDeviceUpload,
+  checkExistingAccount,
+  checkIfAppIsOpen,
+  checkNotificationScreen,
+  passportScanPre,
+  additionalInfoStep,
+  checkDuplicateBanner,
+  changeUserNationalityS1,
+  postPaymentProcess, 
+  existingAccountEditInfo,
+  nonExistingAccountInfo
 }

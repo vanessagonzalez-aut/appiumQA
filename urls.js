@@ -1,4 +1,4 @@
-const branch = 'https://deploy-20260716--37e456b3.visachinaonline.com/'
-const email = 'te30@mailinator.com'
+const branch = 'https://deploy-20260723--cb0aabd2.visachinaonline.com/'
+const email = 'tes44@mailinator.com'
 
 module.exports = {branch, email}

@@ -1,5 +1,35 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const https = require('node:https');
+
+// Hace el POST con el módulo nativo `https` en vez de `fetch()`. `fetch()` usa
+// el dispatcher de undici, cuyos sockets keep-alive a veces no terminan de
+// cerrarse antes de que WDIO llame a process.exit() al terminar `onComplete`,
+// lo que provoca un crash nativo de libuv en Windows (UV_HANDLE_CLOSING).
+function postJson(url, payload) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const {hostname, pathname, search} = new URL(url);
+    const req = https.request(
+      {
+        hostname,
+        path: pathname + search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => resolve({status: res.statusCode, body: data}));
+      }
+    );
+    req.on('error', reject);
+    req.end(body);
+  });
+}
 
 /**
  * Obtiene la URL del webhook de Slack desde:
@@ -82,16 +112,12 @@ async function sendSlackMessage({passed = 0, failed = 0, source = 'local', pages
   const payload = {attachments: [{color, blocks}]};
 
   try {
-    const res = await fetch(webhook, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
+    const res = await postJson(webhook, payload);
+    if (res.status >= 200 && res.status < 300) {
       console.log('📨 Resultado enviado a Slack');
       return true;
     }
-    console.warn(`⚠️  Slack respondió ${res.status}: ${await res.text()}`);
+    console.warn(`⚠️  Slack respondió ${res.status}: ${res.body}`);
     return false;
   } catch (err) {
     console.warn('⚠️  No se pudo enviar a Slack:', err.message);

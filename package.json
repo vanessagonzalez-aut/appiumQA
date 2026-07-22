@@ -8,7 +8,10 @@
   "main": "index.js",
   "scripts": {
     "appium": "appium --allow-insecure uiautomator2:chromedriver_autodownload",
-    "test": "wdio run ./wdio.conf.js",
+    "test:setup": "wdio run ./wdio.setup.conf.js",
+    "test:parallel": "wdio run ./wdio.conf.js",
+    "test": "npm run test:setup && npm run test:parallel",
+    "test:only": "wdio run ./wdio.conf.js --spec",
     "slack:test": "node scripts/test-slack.js",
     "report": "allure generate ./allure-results --clean -o ./allure-report && allure open ./allure-report"
   },

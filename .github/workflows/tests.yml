@@ -84,7 +84,9 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
           # Todo en una sola línea: la action ejecuta el script por líneas, así que
           # un bucle multilínea se rompe y el Appium en segundo plano no sobrevive.
-          script: npx appium driver install uiautomator2 || true; (npx appium --allow-insecure uiautomator2:chromedriver_autodownload >appium.log 2>&1 &); for i in $(seq 1 30); do curl -sf http://127.0.0.1:4723/status >/dev/null && break; echo "Esperando a Appium ($i)"; sleep 2; done; npm test
+          # npm run test:setup corre PRIMERO (secuencial, un solo dispositivo) y
+          # solo si pasa (&&) arranca npm run test:parallel en todos los dispositivos.
+          script: npx appium driver install uiautomator2 || true; (npx appium --allow-insecure uiautomator2:chromedriver_autodownload >appium.log 2>&1 &); for i in $(seq 1 30); do curl -sf http://127.0.0.1:4723/status >/dev/null && break; echo "Esperando a Appium ($i)"; sleep 2; done; echo "=== Fase de precondición ==="; npm run test:setup && echo "=== Fase en paralelo ===" && npm run test:parallel
 
       - name: Sembrar historial de corridas anteriores
         if: always()
