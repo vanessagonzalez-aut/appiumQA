@@ -1,1 +1,1 @@
-{"total":2,"items":[{"uid":"a8293923379cfa186cd10bb2d57b3dea","name":"Travel doc pre and post payment are working correctly","statistic":{"failed":0,"broken":1,"skipped":0,"passed":0,"unknown":0,"total":1}},{"uid":"9c95afa7f5f7d7b54443a91912979456","name":"Setup Account","statistic":{"failed":0,"broken":0,"skipped":0,"passed":1,"unknown":0,"total":1}}]}
+{"total":1,"items":[{"uid":"9c95afa7f5f7d7b54443a91912979456","name":"Setup Account","statistic":{"failed":0,"broken":1,"skipped":0,"passed":0,"unknown":0,"total":1}}]}
